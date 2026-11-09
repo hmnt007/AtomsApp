@@ -1,3 +1,4 @@
+import { ONBOARDING_KEY } from '@/utils/onboarding';
 import { CalendarSnapshot } from '@/components/CalendarSnapshot';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -33,9 +34,7 @@ export interface Habit {
 }
 
 export const INITIAL_HABITS: Habit[] = [
-  { id: '1', title: 'Morning Meditation', identity: 'I am a calm person', completed: false, streak: 12, history: [], repeatDays: [0, 1, 2, 3, 4, 5, 6], color: '#FF9500', partner: '', partnerEmail: '', autoShareEnabled: false },
-  { id: '2', title: 'Read 10 Pages', identity: 'I am a learner', completed: true, streak: 5, history: [], repeatDays: [0, 1, 2, 3, 4, 5, 6], color: '#5856D6', partner: '', partnerEmail: '', autoShareEnabled: false },
-  { id: '3', title: 'Evening Run', identity: 'I am an athlete', completed: false, streak: 0, history: [], repeatDays: [0, 1, 2, 3, 4, 5, 6], color: '#34C759', partner: '', partnerEmail: '', autoShareEnabled: false },
+  { id: '1', title: 'Read 10 Pages', identity: 'I am a learner', completed: false, streak: 0, history: [], repeatDays: [0, 1, 2, 3, 4, 5, 6], color: '#5856D6', partner: '', partnerEmail: '', autoShareEnabled: false },
 ];
 
 export default function HomeScreen() {
@@ -148,6 +147,12 @@ export default function HomeScreen() {
   };
 
   React.useEffect(() => {
+    AsyncStorage.getItem(ONBOARDING_KEY).then(seen => {
+      if (!seen) router.push('/onboarding');
+    }).catch(() => { });
+  }, []);
+
+  React.useEffect(() => {
     async function setupNotifications() {
       await registerForPushNotificationsAsync();
       await scheduleDailyReminder(20, 0); // 8:00 PM
@@ -239,7 +244,16 @@ export default function HomeScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
-        <Text style={[styles.greeting, { color: theme.text }]}>Today</Text>
+        <View style={styles.headerRow}>
+          <Text style={[styles.greeting, { color: theme.text }]}>Today</Text>
+          <Pressable
+            onPress={() => router.push('/onboarding')}
+            hitSlop={12}
+            accessibilityLabel="Open app guide"
+          >
+            <Ionicons name="help-circle-outline" size={28} color={theme.icon} />
+          </Pressable>
+        </View>
         <Text style={[styles.date, { color: theme.icon }]}>
           {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
         </Text>
@@ -421,6 +435,11 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
     marginBottom: 30,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   greeting: {
     fontSize: 34,

@@ -2,6 +2,20 @@
 
 All notable changes to the AtomsApp project will be documented in this file.
 
+## [1.4.0] - 2026-11-09
+
+### Added
+- **Onboarding Guide**: A 7-step walkthrough of every feature, with Next, Back and Skip. Shown on first launch, and can be replayed from the help button on the Today screen.
+- **Interactive Statistics**: Every stat card is now tappable and expands a per-habit breakdown. Tap a habit to open its calendar. Tap a Weekly Activity bar to see that day's completion.
+
+### Changed
+- New installs start with a single sample habit instead of three with fake streaks.
+- Stats are computed from real check-in history (no more stale streak or completion values).
+- Weekly Activity measures completion against habits scheduled on each day.
+- Identity Shifts shows your actual strongest identity instead of a fixed quote.
+- Stat labels renamed to "Done Today" and "Best Streak" to match what they measure.
+
+---
 ## [1.3.0] - 2026-03-07
 
 ### Added
