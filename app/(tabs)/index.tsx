@@ -39,7 +39,7 @@ export interface Habit {
 }
 
 export const INITIAL_HABITS: Habit[] = [
-  { id: '1', title: 'Meditate', identity: 'I want to become a calm person', completed: false, streak: 0, history: [], repeatDays: [0, 1, 2, 3, 4, 5, 6], color: '#5856D6', partner: '', partnerEmail: '', autoShareEnabled: false },
+  { id: '1', title: 'Meditate', identity: 'I want to be a calm person', completed: false, streak: 0, history: [], repeatDays: [0, 1, 2, 3, 4, 5, 6], color: '#5856D6', partner: '', partnerEmail: '', autoShareEnabled: false },
 ];
 
 export default function HomeScreen() {
