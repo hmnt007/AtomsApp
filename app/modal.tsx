@@ -121,6 +121,7 @@ export default function CalendarModal() {
   };
 
   const toggleDate = (dateStr: string) => {
+    if (dateStr > getLocalDateString()) return;
     if (!selectedHabitId || !selectedHabit) return;
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -185,16 +186,19 @@ export default function CalendarModal() {
           const dayIdx = (date.getDay() + 6) % 7;
           const isScheduled = selectedHabit?.repeatDays?.includes(dayIdx) ?? true;
           const habitColor = selectedHabit?.color || theme.success;
+          const isFuture = dateStr > getLocalDateString();
 
           return (
             <Pressable
               key={dateStr}
               onPress={() => toggleDate(dateStr)}
+              disabled={isFuture}
               style={[
                 styles.dayCell,
                 isTracked && { backgroundColor: habitColor + '40', borderColor: habitColor, borderWidth: 1 },
                 isToday && !isTracked && { borderColor: theme.tint, borderWidth: 1 },
-                !isScheduled && !isTracked && { opacity: 0.3 }
+                !isScheduled && !isTracked && { opacity: 0.3 },
+                isFuture && { opacity: 0.3 }
               ]}
             >
               <Text style={[
