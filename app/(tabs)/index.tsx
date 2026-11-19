@@ -327,7 +327,7 @@ function HabitCard({ habit, theme, onToggle, onDelete, onEdit }: { habit: Habit,
           style={styles.habitInfo}
         >
           <View style={styles.titleRow}>
-            <Text style={[styles.habitTitle, { color: theme.text }]}>{habit.title}</Text>
+            <Text style={[styles.habitTitle, { color: theme.text }]} numberOfLines={1}>{habit.title}</Text>
             <Ionicons
               name={expanded ? "chevron-up" : "chevron-down"}
               size={16}
@@ -472,10 +472,12 @@ const styles = StyleSheet.create({
   },
   habitInfo: {
     flex: 1,
+    marginRight: 12,
   },
   habitTitle: {
     fontSize: 18,
     fontWeight: '700',
+    flexShrink: 1,
   },
   habitIdentity: {
     fontSize: 14,
