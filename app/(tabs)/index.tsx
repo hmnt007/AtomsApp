@@ -3,7 +3,7 @@ import { CalendarSnapshot } from '@/components/CalendarSnapshot';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { getLocalDateString } from '@/utils/date';
-import { registerForPushNotificationsAsync, scheduleDailyReminder } from '@/utils/notifications';
+import { registerForPushNotificationsAsync, syncHabitReminders } from '@/utils/notifications';
 import { calculateStreak } from '@/utils/streak';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -31,6 +31,8 @@ export interface Habit {
   partner?: string;
   partnerEmail?: string;
   autoShareEnabled?: boolean;
+  reminderHour?: number;
+  reminderMinute?: number;
 }
 
 export const INITIAL_HABITS: Habit[] = [
@@ -58,6 +60,7 @@ export default function HomeScreen() {
       }));
 
       setHabits(loadedHabits);
+      await syncHabitReminders(loadedHabits);
 
       // Automated Sharing Logic with Snapshots
       const lastShareDate = await AsyncStorage.getItem('last_auto_share_date');
@@ -155,7 +158,6 @@ export default function HomeScreen() {
   React.useEffect(() => {
     async function setupNotifications() {
       await registerForPushNotificationsAsync();
-      await scheduleDailyReminder(20, 0); // 8:00 PM
     }
     setupNotifications();
 

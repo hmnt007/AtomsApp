@@ -43,14 +43,12 @@ export async function registerForPushNotificationsAsync() {
     return token;
 }
 
-export async function scheduleDailyReminder(hour: number = 20, minute: number = 0) {
-    // Clear any existing reminders first
-    await Notifications.cancelAllScheduledNotificationsAsync();
-
+export async function scheduleHabitReminder(habitId: string, title: string, hour: number, minute: number) {
     await Notifications.scheduleNotificationAsync({
+        identifier: `habit-reminder-${habitId}`,
         content: {
-            title: "Atom Check-in ⚛️",
-            body: "Small habits lead to big changes. Did you complete your habits today?",
+            title: "Habit reminder",
+            body: `Time to work on "${title}"`,
             sound: true,
         },
         trigger: {
@@ -60,4 +58,25 @@ export async function scheduleDailyReminder(hour: number = 20, minute: number = 
             type: Notifications.SchedulableTriggerInputTypes.DAILY,
         } as any, // Type casting due to some expo version type mismatches
     });
+}
+
+export async function cancelHabitReminder(habitId: string) {
+    await Notifications.cancelScheduledNotificationAsync(`habit-reminder-${habitId}`);
+}
+
+export async function syncHabitReminders(habits: { id: string; title: string; reminderHour?: number; reminderMinute?: number }[]) {
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    const existingHabitReminders = scheduled.filter(n => n.identifier.startsWith('habit-reminder-'));
+    await Promise.all(
+        existingHabitReminders.map(n => Notifications.cancelScheduledNotificationAsync(n.identifier))
+    );
+
+    for (const habit of habits) {
+        await scheduleHabitReminder(
+            habit.id,
+            habit.title,
+            habit.reminderHour ?? 20,
+            habit.reminderMinute ?? 0
+        );
+    }
 }

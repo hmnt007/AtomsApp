@@ -22,6 +22,8 @@ export default function AddHabitScreen() {
     const [partner, setPartner] = useState(''); // Accountability partner name
     const [partnerEmail, setPartnerEmail] = useState(''); // Accountability partner email
     const [autoShareEnabled, setAutoShareEnabled] = useState(false); // Automated sharing
+    const [reminderHour, setReminderHour] = useState(20); // Reminder time, 24h clock
+    const [reminderMinute, setReminderMinute] = useState(0);
 
     const COLORS = ['#FF9500', '#FF3B30', '#34C759', '#007AFF', '#5856D6', '#AF52DE', '#FF2D55'];
     const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -53,6 +55,8 @@ export default function AddHabitScreen() {
                 setPartner(habit.partner || '');
                 setPartnerEmail(habit.partnerEmail || '');
                 setAutoShareEnabled(habit.autoShareEnabled || false);
+                setReminderHour(habit.reminderHour ?? 20);
+                setReminderMinute(habit.reminderMinute ?? 0);
             }
         } catch (e) {
             console.error('Failed to load habit for edit', e);
@@ -78,7 +82,9 @@ export default function AddHabitScreen() {
                         color,
                         partner: partner.trim(),
                         partnerEmail: partnerEmail.trim(),
-                        autoShareEnabled
+                        autoShareEnabled,
+                        reminderHour,
+                        reminderMinute
                     } : h
                 );
             } else {
@@ -94,6 +100,8 @@ export default function AddHabitScreen() {
                     partner: partner.trim(),
                     partnerEmail: partnerEmail.trim(),
                     autoShareEnabled,
+                    reminderHour,
+                    reminderMinute,
                 };
                 habits.push(newHabit);
             }
@@ -281,6 +289,52 @@ export default function AddHabitScreen() {
                     </Text>
                 </View>
 
+                <View style={styles.section}>
+                    <Text style={[styles.label, { color: theme.icon }]}>REMINDER TIME</Text>
+                    <View style={[styles.row, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                        <Text style={[styles.rowText, { color: theme.text }]}>
+                            {(() => {
+                                const hour12 = reminderHour % 12 === 0 ? 12 : reminderHour % 12;
+                                const ampm = reminderHour < 12 ? 'AM' : 'PM';
+                                const minuteStr = reminderMinute.toString().padStart(2, '0');
+                                return `${hour12}:${minuteStr} ${ampm}`;
+                            })()}
+                        </Text>
+                        <View style={styles.reminderSteppers}>
+                            <View style={styles.stepperGroup}>
+                                <Pressable
+                                    style={[styles.chevronButton, { backgroundColor: theme.background, borderColor: theme.border }]}
+                                    onPress={() => setReminderHour(prev => ((prev - 1) % 24 + 24) % 24)}
+                                >
+                                    <Ionicons name="chevron-down" size={16} color={theme.text} />
+                                </Pressable>
+                                <Text style={[styles.stepperLabel, { color: theme.icon }]}>Hr</Text>
+                                <Pressable
+                                    style={[styles.chevronButton, { backgroundColor: theme.background, borderColor: theme.border }]}
+                                    onPress={() => setReminderHour(prev => ((prev + 1) % 24 + 24) % 24)}
+                                >
+                                    <Ionicons name="chevron-up" size={16} color={theme.text} />
+                                </Pressable>
+                            </View>
+                            <View style={styles.stepperGroup}>
+                                <Pressable
+                                    style={[styles.chevronButton, { backgroundColor: theme.background, borderColor: theme.border }]}
+                                    onPress={() => setReminderMinute(prev => ((prev - 15) % 60 + 60) % 60)}
+                                >
+                                    <Ionicons name="chevron-down" size={16} color={theme.text} />
+                                </Pressable>
+                                <Text style={[styles.stepperLabel, { color: theme.icon }]}>Min</Text>
+                                <Pressable
+                                    style={[styles.chevronButton, { backgroundColor: theme.background, borderColor: theme.border }]}
+                                    onPress={() => setReminderMinute(prev => ((prev + 15) % 60 + 60) % 60)}
+                                >
+                                    <Ionicons name="chevron-up" size={16} color={theme.text} />
+                                </Pressable>
+                            </View>
+                        </View>
+                    </View>
+                </View>
+
                 <Pressable
                     style={[styles.saveButton, { backgroundColor: title.trim() ? theme.tint : theme.border }]}
                     onPress={handleSave}
@@ -397,6 +451,28 @@ const styles = StyleSheet.create({
     rowText: {
         fontSize: 18,
         fontWeight: '600',
+    },
+    reminderSteppers: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+    },
+    stepperGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    chevronButton: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    stepperLabel: {
+        fontSize: 11,
+        fontWeight: '700',
     },
     saveButton: {
         height: 60,
