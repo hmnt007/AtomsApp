@@ -224,6 +224,13 @@ export default function CalendarModal() {
         </Pressable>
         <Text style={[styles.title, { color: theme.text }]}>Activity Calendar</Text>
         <View style={styles.headerActions}>
+          <Pressable
+            onPress={() => router.back()}
+            style={{ marginRight: 12 }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={{ color: theme.tint, fontWeight: '700', fontSize: 16 }}>Done</Text>
+          </Pressable>
           {selectedHabit && (
             <>
               <Pressable
