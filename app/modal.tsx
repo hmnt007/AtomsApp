@@ -223,33 +223,7 @@ export default function CalendarModal() {
           <Ionicons name="close" size={28} color={theme.text} />
         </Pressable>
         <Text style={[styles.title, { color: theme.text }]}>Activity Calendar</Text>
-        <View style={styles.headerActions}>
-          <Pressable
-            onPress={() => router.back()}
-            style={{ marginRight: 12 }}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={{ color: theme.tint, fontWeight: '700', fontSize: 16 }}>Done</Text>
-          </Pressable>
-          {selectedHabit && (
-            <>
-              <Pressable
-                onPress={handleEditHabit}
-                style={styles.headerIconBtn}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons name="pencil-outline" size={20} color={theme.text} />
-              </Pressable>
-              <Pressable
-                onPress={() => handleDeleteHabit(selectedHabit.id, selectedHabit.title)}
-                style={[styles.headerIconBtn, { marginLeft: 12 }]}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons name="trash-outline" size={20} color="#FF3B30" />
-              </Pressable>
-            </>
-          )}
-        </View>
+        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 20 }]} showsVerticalScrollIndicator={false}>
@@ -318,17 +292,24 @@ export default function CalendarModal() {
           <View style={styles.expandedActionRow}>
             <Pressable
               style={[styles.expandedEditBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
+              onPress={() => router.back()}
+            >
+              <Ionicons name="checkmark-circle-outline" size={18} color={theme.tint} style={{ marginRight: 6 }} />
+              <Text style={[styles.expandedEditBtnText, { color: theme.tint }]}>Done</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.expandedEditBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
               onPress={handleEditHabit}
             >
               <Ionicons name="pencil-outline" size={18} color={theme.text} style={{ marginRight: 6 }} />
-              <Text style={[styles.expandedEditBtnText, { color: theme.text }]}>Edit Habit</Text>
+              <Text style={[styles.expandedEditBtnText, { color: theme.text }]}>Edit</Text>
             </Pressable>
             <Pressable
               style={[styles.expandedDeleteBtn, { backgroundColor: '#FF3B3015', borderColor: '#FF3B3040' }]}
               onPress={() => handleDeleteHabit(selectedHabit.id, selectedHabit.title)}
             >
               <Ionicons name="trash-outline" size={18} color="#FF3B30" style={{ marginRight: 6 }} />
-              <Text style={styles.expandedDeleteBtnText}>Delete Habit</Text>
+              <Text style={styles.expandedDeleteBtnText}>Delete</Text>
             </Pressable>
           </View>
         )}
@@ -362,10 +343,9 @@ const styles = StyleSheet.create({
   legendItem: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 15 },
   legendBox: { width: 16, height: 16, borderRadius: 4, marginRight: 8 },
   legendText: { fontSize: 12, fontWeight: '600' },
-  headerActions: { flexDirection: 'row', alignItems: 'center' },
-  headerIconBtn: { padding: 4 },
+  headerSpacer: { width: 38 },
   scrollContent: { paddingBottom: 40 },
-  expandedActionRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 28, gap: 12 },
+  expandedActionRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 28, gap: 10 },
   expandedEditBtn: { flex: 1, height: 50, borderRadius: 25, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   expandedEditBtnText: { fontSize: 16, fontWeight: '700' },
   expandedDeleteBtn: { flex: 1, height: 50, borderRadius: 25, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
