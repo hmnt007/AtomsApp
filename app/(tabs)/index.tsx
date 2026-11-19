@@ -17,6 +17,7 @@ import Animated, {
   useSharedValue,
   withTiming
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { captureRef } from 'react-native-view-shot';
 
 export interface Habit {
@@ -42,6 +43,7 @@ export const INITIAL_HABITS: Habit[] = [
 export default function HomeScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
+  const insets = useSafeAreaInsets();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [captureHabit, setCaptureHabit] = useState<Habit | null>(null);
   const snapshotRef = useRef<View>(null);
@@ -244,7 +246,7 @@ export default function HomeScreen() {
   const visibleHabits = habits.filter(h => !h.repeatDays || h.repeatDays.includes(todayIdx));
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top + 20 }]}>
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <Text style={[styles.greeting, { color: theme.text }]}>Today</Text>
@@ -270,7 +272,7 @@ export default function HomeScreen() {
       />
 
       <Pressable
-        style={[styles.fab, { backgroundColor: theme.tint }]}
+        style={[styles.fab, { backgroundColor: theme.tint, bottom: insets.bottom + 24, right: 30 }]}
         onPress={() => router.push('/add-habit')}
       >
         <Ionicons name="add" size={30} color={colorScheme === 'dark' ? '#000' : '#fff'} />
@@ -432,7 +434,6 @@ function HabitCard({ habit, theme, onToggle, onDelete, onEdit }: { habit: Habit,
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 60,
   },
   header: {
     paddingHorizontal: 20,
@@ -525,8 +526,6 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 40,
-    right: 30,
     width: 60,
     height: 60,
     borderRadius: 30,

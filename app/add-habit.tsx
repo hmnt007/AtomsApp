@@ -6,11 +6,13 @@ import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, DeviceEventEmitter, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { INITIAL_HABITS } from './(tabs)/index';
 
 export default function AddHabitScreen() {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
+    const insets = useSafeAreaInsets();
     const { id } = useLocalSearchParams();
     const targetId = Array.isArray(id) ? id[0] : (id as string | undefined);
     const isEditing = Boolean(targetId);
@@ -157,7 +159,7 @@ export default function AddHabitScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={[styles.container, { backgroundColor: theme.background }]}
         >
-            <ScrollView contentContainerStyle={styles.scrollContent}>
+            <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }]}>
                 <View style={styles.header}>
                     <Pressable onPress={() => router.back()} style={styles.closeButton}>
                         <Ionicons name="close" size={28} color={theme.text} />
@@ -367,7 +369,6 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         padding: 24,
-        paddingTop: 60,
     },
     header: {
         flexDirection: 'row',

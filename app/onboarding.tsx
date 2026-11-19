@@ -8,6 +8,7 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { FadeInRight, runOnJS } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ONBOARDING_KEY } from '@/utils/onboarding';
 
@@ -81,6 +82,7 @@ const STEPS: Step[] = [
 export default function OnboardingScreen() {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
+    const insets = useSafeAreaInsets();
     const [index, setIndex] = useState(0);
     const step = STEPS[index];
     const isLast = index === STEPS.length - 1;
@@ -125,7 +127,7 @@ export default function OnboardingScreen() {
     });
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }]}>
             <View style={styles.topBar}>
                 <Text style={[styles.counter, { color: theme.icon }]}>
                     {index + 1} / {STEPS.length}
@@ -193,8 +195,6 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingTop: 60,
-        paddingBottom: 40,
         paddingHorizontal: 24,
     },
     topBar: {
