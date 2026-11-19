@@ -70,12 +70,38 @@ elif [ "$BUILD_TYPE" = "aab" ] || [ "$BUILD_TYPE" = "bundle" ]; then
 else
     echo "Building Android APK (Release)..."
     ./gradlew assembleRelease
-    
-    APK_SOURCE="$ANDROID_DIR/app/build/outputs/apk/release/app-release.apk"
-    if [ -f "$APK_SOURCE" ]; then
-        cp "$APK_SOURCE" "$OUTPUT_DIR/AtomsApp-release.apk"
-        echo "SUCCESS! APK generated at: $OUTPUT_DIR/AtomsApp-release.apk"
-        ls -lh "$OUTPUT_DIR/AtomsApp-release.apk"
+
+    APK_RELEASE_DIR="$ANDROID_DIR/app/build/outputs/apk/release"
+    shopt -s nullglob
+    PER_ABI_APKS=("$APK_RELEASE_DIR"/app-*-release.apk)
+    shopt -u nullglob
+
+    if [ "${#PER_ABI_APKS[@]}" -gt 0 ]; then
+        # Per-ABI split APKs (e.g. app-arm64-v8a-release.apk, app-armeabi-v7a-release.apk, ...)
+        cp "${PER_ABI_APKS[@]}" "$OUTPUT_DIR/"
+        echo "SUCCESS! Per-ABI APKs generated in: $OUTPUT_DIR"
+        ls -lh "$OUTPUT_DIR"/app-*-release.apk
+
+        ARM64_APK="$APK_RELEASE_DIR/app-arm64-v8a-release.apk"
+        if [ -f "$ARM64_APK" ]; then
+            cp "$ARM64_APK" "$OUTPUT_DIR/AtomsApp-release.apk"
+            echo "Default install APK (arm64-v8a) at: $OUTPUT_DIR/AtomsApp-release.apk"
+            ls -lh "$OUTPUT_DIR/AtomsApp-release.apk"
+        else
+            echo "WARNING: No app-arm64-v8a-release.apk found among per-ABI APKs; $OUTPUT_DIR/AtomsApp-release.apk was not created."
+        fi
+    else
+        # Fallback: no per-ABI split files found (e.g. ABI splits disabled, or script
+        # run before the gradle-side change lands) - fall back to a single APK.
+        APK_SOURCE="$APK_RELEASE_DIR/app-release.apk"
+        if [ -f "$APK_SOURCE" ]; then
+            cp "$APK_SOURCE" "$OUTPUT_DIR/AtomsApp-release.apk"
+            echo "SUCCESS! APK generated at: $OUTPUT_DIR/AtomsApp-release.apk"
+            ls -lh "$OUTPUT_DIR/AtomsApp-release.apk"
+        else
+            echo "ERROR: No APK found in $APK_RELEASE_DIR (expected app-*-release.apk or app-release.apk)."
+            exit 1
+        fi
     fi
 fi
 
