@@ -56,6 +56,7 @@ export function calculateStreak(history: string[], repeatDays: number[]): number
 export function missedPreviousScheduledDay(history: string[], repeatDays: number[], today: Date = new Date()): boolean {
     if (!repeatDays || repeatDays.length === 0) return false;
     if (!history) history = [];
+    if (history.length === 0) return false;
 
     const historySet = new Set(history);
 

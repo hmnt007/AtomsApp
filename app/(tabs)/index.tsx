@@ -4,8 +4,9 @@ import { Colors } from '@/constants/Colors';
 import { Layout } from '@/constants/layout';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { getLocalDateString } from '@/utils/date';
-import { cancelMissTwiceWarning, registerForPushNotificationsAsync, scheduleMissTwiceWarning, syncHabitReminders } from '@/utils/notifications';
+import { cancelMissTwiceWarning, migrateLegacyReminder, registerForPushNotificationsAsync, scheduleMissTwiceWarning, syncHabitReminders } from '@/utils/notifications';
 import { calculateStreak, missedPreviousScheduledDay } from '@/utils/streak';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
@@ -45,6 +46,7 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
   const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [captureHabit, setCaptureHabit] = useState<Habit | null>(null);
   const snapshotRef = useRef<View>(null);
@@ -63,14 +65,22 @@ export default function HomeScreen() {
       }));
 
       setHabits(loadedHabits);
-      await syncHabitReminders(loadedHabits);
 
-      for (const h of loadedHabits) {
-        if (missedPreviousScheduledDay(h.history, h.repeatDays, new Date())) {
-          await scheduleMissTwiceWarning(h.id, h.title);
-        } else {
-          await cancelMissTwiceWarning(h.id);
+      // Notification side-effects are isolated in their own try/catch so a
+      // failure here (e.g. unsupported notification APIs on web) can never
+      // abort auto-share or first-launch seeding below.
+      try {
+        await syncHabitReminders(loadedHabits);
+
+        for (const h of loadedHabits) {
+          if (missedPreviousScheduledDay(h.history, h.repeatDays, new Date())) {
+            await scheduleMissTwiceWarning(h.id, h.title);
+          } else {
+            await cancelMissTwiceWarning(h.id);
+          }
         }
+      } catch (notificationError) {
+        console.error('Failed to sync habit notifications', notificationError);
       }
 
       // Automated Sharing Logic with Snapshots
@@ -168,6 +178,7 @@ export default function HomeScreen() {
 
   React.useEffect(() => {
     async function setupNotifications() {
+      await migrateLegacyReminder();
       await registerForPushNotificationsAsync();
     }
     setupNotifications();
@@ -281,7 +292,14 @@ export default function HomeScreen() {
       />
 
       <Pressable
-        style={[styles.fab, { backgroundColor: theme.tint, bottom: insets.bottom + 24, right: 30 }]}
+        style={[
+          styles.fab,
+          {
+            backgroundColor: theme.tint,
+            bottom: Platform.OS === 'ios' ? tabBarHeight + 16 : 24,
+            right: 30,
+          },
+        ]}
         onPress={() => router.push('/add-habit')}
       >
         <Ionicons name="add" size={30} color={colorScheme === 'dark' ? '#000' : '#fff'} />

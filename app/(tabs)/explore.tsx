@@ -9,6 +9,7 @@ import * as Haptics from 'expo-haptics';
 import { router, useFocusEffect } from 'expo-router';
 import React from 'react';
 import { DeviceEventEmitter, Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { INITIAL_HABITS } from './index';
 
 interface Habit {
@@ -34,6 +35,7 @@ const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 export default function StatsScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
+  const insets = useSafeAreaInsets();
   const [habits, setHabits] = React.useState<Habit[]>([]);
   const [selected, setSelected] = React.useState<CardKey | null>(null);
   const [dayInfo, setDayInfo] = React.useState<string | null>(null);
@@ -157,7 +159,7 @@ export default function StatsScreen() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: theme.background }}
-      contentContainerStyle={styles.container}
+      contentContainerStyle={[styles.container, { paddingTop: insets.top + 20 }]}
     >
       <View style={styles.header}>
         <Text style={[styles.title, { color: theme.text }]}>Statistics</Text>
@@ -312,7 +314,6 @@ function StatCard({ title, value, icon, color, theme, onPress, active }: any) {
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 60,
     paddingBottom: 100,
   },
   header: {
