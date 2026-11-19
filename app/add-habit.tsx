@@ -270,17 +270,29 @@ export default function AddHabitScreen() {
                                     onPress={() => toggleDay(index)}
                                     style={[
                                         styles.dayButton,
-                                        { backgroundColor: theme.card, borderColor: theme.border },
-                                        isSelected && { backgroundColor: theme.tint, borderColor: theme.tint }
+                                        { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 },
+                                        isSelected && { backgroundColor: theme.tint, borderColor: theme.tint, borderWidth: 2 }
                                     ]}
                                 >
                                     <Text style={[
                                         styles.dayButtonText,
-                                        { color: theme.text },
+                                        { color: theme.icon },
                                         isSelected && { color: colorScheme === 'dark' ? '#000' : '#fff' }
                                     ]}>
                                         {day}
                                     </Text>
+                                    {isSelected && (
+                                        <View style={[
+                                            styles.dayButtonCheckBadge,
+                                            { backgroundColor: theme.background, borderColor: theme.tint }
+                                        ]}>
+                                            <Ionicons
+                                                name="checkmark"
+                                                size={10}
+                                                color={theme.tint}
+                                            />
+                                        </View>
+                                    )}
                                 </Pressable>
                             );
                         })}
@@ -419,10 +431,22 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         alignItems: 'center',
         justifyContent: 'center',
+        position: 'relative',
     },
     dayButtonText: {
         fontSize: 14,
         fontWeight: '700',
+    },
+    dayButtonCheckBadge: {
+        position: 'absolute',
+        top: -4,
+        right: -4,
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     colorsRow: {
         paddingVertical: 10,
