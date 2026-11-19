@@ -168,13 +168,7 @@ export default function AddHabitScreen() {
                     <Text style={[styles.headerTitle, { color: theme.text }]}>
                         {isEditing ? 'Edit Habit' : 'New Habit'}
                     </Text>
-                    {isEditing ? (
-                        <Pressable onPress={handleDelete} style={styles.deleteIconButton}>
-                            <Ionicons name="trash-outline" size={24} color="#FF3B30" />
-                        </Pressable>
-                    ) : (
-                        <View style={{ width: 40 }} />
-                    )}
+                    <View style={{ width: 40 }} />
                 </View>
 
                 <View style={styles.section}>
@@ -510,12 +504,6 @@ const styles = StyleSheet.create({
     saveButtonText: {
         fontSize: 18,
         fontWeight: '700',
-    },
-    deleteIconButton: {
-        width: 40,
-        height: 40,
-        alignItems: 'center',
-        justifyContent: 'center',
     },
     deleteButton: {
         height: 60,
