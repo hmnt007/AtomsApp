@@ -12,6 +12,12 @@ export interface BackupFile {
   habits: Habit[];
 }
 
+const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
+
+// Only id/title/identity/color are required: the app itself treats history,
+// repeatDays, completed and streak as optional and falls back to defaults
+// (see app/(tabs)/index.tsx), so a legacy habit saved before those fields
+// existed must still round-trip through export/import.
 function isValidBackup(data: unknown): data is BackupFile {
   if (!data || typeof data !== 'object') return false;
   const d = data as any;
@@ -21,12 +27,22 @@ function isValidBackup(data: unknown): data is BackupFile {
     typeof h.id === 'string' &&
     typeof h.title === 'string' &&
     typeof h.identity === 'string' &&
-    typeof h.completed === 'boolean' &&
-    typeof h.streak === 'number' &&
-    Array.isArray(h.history) &&
-    Array.isArray(h.repeatDays) &&
-    typeof h.color === 'string'
+    typeof h.color === 'string' &&
+    (h.history === undefined || Array.isArray(h.history)) &&
+    (h.repeatDays === undefined || Array.isArray(h.repeatDays)) &&
+    (h.completed === undefined || typeof h.completed === 'boolean') &&
+    (h.streak === undefined || typeof h.streak === 'number')
   );
+}
+
+function normalizeHabit(h: Habit): Habit {
+  return {
+    ...h,
+    completed: typeof h.completed === 'boolean' ? h.completed : false,
+    streak: typeof h.streak === 'number' ? h.streak : 0,
+    history: Array.isArray(h.history) ? h.history : [],
+    repeatDays: Array.isArray(h.repeatDays) && h.repeatDays.length ? h.repeatDays : ALL_DAYS,
+  };
 }
 
 export async function exportHabits(): Promise<{ success: boolean; fileUri?: string; error?: string }> {
@@ -56,7 +72,10 @@ export async function exportHabits(): Promise<{ success: boolean; fileUri?: stri
 
 export async function importHabits(): Promise<{ success: boolean; count?: number; cancelled?: boolean; error?: string }> {
   try {
-    const result = await DocumentPicker.getDocumentAsync({ type: 'application/json', copyToCacheDirectory: true });
+    // Drive/Downloads/email often misreport a .json file's MIME type (e.g.
+    // application/octet-stream), so filter loosely and rely on isValidBackup
+    // to reject anything that isn't actually a backup.
+    const result = await DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: true });
     if (result.canceled) {
       return { success: false, cancelled: true };
     }
@@ -73,9 +92,10 @@ export async function importHabits(): Promise<{ success: boolean; count?: number
       return { success: false, error: 'This file is not a valid Atoms backup.' };
     }
 
-    await AsyncStorage.setItem('habits', JSON.stringify(parsed.habits));
+    const normalized = parsed.habits.map(normalizeHabit);
+    await AsyncStorage.setItem('habits', JSON.stringify(normalized));
     DeviceEventEmitter.emit('habitsUpdated');
-    return { success: true, count: parsed.habits.length };
+    return { success: true, count: normalized.length };
   } catch (error) {
     return { success: false, error: String(error) };
   }
