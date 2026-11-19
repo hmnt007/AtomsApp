@@ -4,8 +4,8 @@ import { Colors } from '@/constants/Colors';
 import { Layout } from '@/constants/layout';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { getLocalDateString } from '@/utils/date';
-import { registerForPushNotificationsAsync, syncHabitReminders } from '@/utils/notifications';
-import { calculateStreak } from '@/utils/streak';
+import { cancelMissTwiceWarning, registerForPushNotificationsAsync, scheduleMissTwiceWarning, syncHabitReminders } from '@/utils/notifications';
+import { calculateStreak, missedPreviousScheduledDay } from '@/utils/streak';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
@@ -64,6 +64,14 @@ export default function HomeScreen() {
 
       setHabits(loadedHabits);
       await syncHabitReminders(loadedHabits);
+
+      for (const h of loadedHabits) {
+        if (missedPreviousScheduledDay(h.history, h.repeatDays, new Date())) {
+          await scheduleMissTwiceWarning(h.id, h.title);
+        } else {
+          await cancelMissTwiceWarning(h.id);
+        }
+      }
 
       // Automated Sharing Logic with Snapshots
       const lastShareDate = await AsyncStorage.getItem('last_auto_share_date');

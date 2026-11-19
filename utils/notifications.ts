@@ -64,6 +64,24 @@ export async function cancelHabitReminder(habitId: string) {
     await Notifications.cancelScheduledNotificationAsync(`habit-reminder-${habitId}`);
 }
 
+export async function scheduleMissTwiceWarning(habitId: string, habitTitle: string): Promise<void> {
+    await Notifications.scheduleNotificationAsync({
+        identifier: `miss-twice-${habitId}`,
+        content: {
+            title: "Don't break it twice ⚠️",
+            body: `You missed "${habitTitle}" yesterday — don't let it slip two days in a row.`,
+            sound: true,
+        },
+        trigger: {
+            seconds: 60 * 60 * 2,
+        } as any, // Type casting due to some expo version type mismatches
+    });
+}
+
+export async function cancelMissTwiceWarning(habitId: string): Promise<void> {
+    await Notifications.cancelScheduledNotificationAsync(`miss-twice-${habitId}`);
+}
+
 export async function syncHabitReminders(habits: { id: string; title: string; reminderHour?: number; reminderMinute?: number }[]) {
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
     const existingHabitReminders = scheduled.filter(n => n.identifier.startsWith('habit-reminder-'));
