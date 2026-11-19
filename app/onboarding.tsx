@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/Colors';
+import { Layout } from '@/constants/layout';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -195,7 +196,7 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingHorizontal: 24,
+        paddingHorizontal: Layout.screenPaddingH,
     },
     topBar: {
         flexDirection: 'row',

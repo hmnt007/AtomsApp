@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/Colors';
+import { Layout } from '@/constants/layout';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { getLocalDateString } from '@/utils/date';
 import { calculateStreak } from '@/utils/streak';
@@ -326,7 +327,7 @@ export default function CalendarModal() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 20 },
+  container: { flex: 1, paddingHorizontal: Layout.screenPaddingH },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
   closeBtn: { padding: 5 },
   title: { fontSize: 20, fontWeight: '700' },

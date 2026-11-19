@@ -1,6 +1,7 @@
 import { ONBOARDING_KEY } from '@/utils/onboarding';
 import { CalendarSnapshot } from '@/components/CalendarSnapshot';
 import { Colors } from '@/constants/Colors';
+import { Layout } from '@/constants/layout';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { getLocalDateString } from '@/utils/date';
 import { registerForPushNotificationsAsync, syncHabitReminders } from '@/utils/notifications';
@@ -436,7 +437,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: 20,
+    paddingHorizontal: Layout.screenPaddingH,
     marginBottom: 30,
   },
   headerRow: {
@@ -455,7 +456,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   listContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: Layout.screenPaddingH,
     paddingBottom: 100,
   },
   habitCard: {

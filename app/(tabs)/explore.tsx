@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/Colors';
+import { Layout } from '@/constants/layout';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { getLocalDateString } from '@/utils/date';
 import { calculateStreak } from '@/utils/streak';
@@ -315,7 +316,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   header: {
-    paddingHorizontal: 20,
+    paddingHorizontal: Layout.screenPaddingH,
     marginBottom: 30,
   },
   title: {
@@ -423,7 +424,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   section: {
-    paddingHorizontal: 20,
+    paddingHorizontal: Layout.screenPaddingH,
     marginBottom: 30,
   },
   sectionTitle: {
