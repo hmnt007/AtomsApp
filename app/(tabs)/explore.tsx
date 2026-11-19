@@ -1,6 +1,7 @@
 import { Colors } from '@/constants/Colors';
 import { Layout } from '@/constants/layout';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { exportHabits, importHabits } from '@/utils/backup';
 import { getLocalDateString } from '@/utils/date';
 import { calculateStreak } from '@/utils/streak';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,7 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { router, useFocusEffect } from 'expo-router';
 import React from 'react';
-import { DeviceEventEmitter, Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, DeviceEventEmitter, Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { INITIAL_HABITS } from './index';
 
@@ -39,6 +40,7 @@ export default function StatsScreen() {
   const [habits, setHabits] = React.useState<Habit[]>([]);
   const [selected, setSelected] = React.useState<CardKey | null>(null);
   const [dayInfo, setDayInfo] = React.useState<string | null>(null);
+  const [busy, setBusy] = React.useState<'export' | 'import' | null>(null);
 
   const loadData = async () => {
     try {
@@ -99,6 +101,48 @@ export default function StatsScreen() {
   };
 
   const openHabit = (id: string) => router.push({ pathname: '/modal', params: { habitId: id } });
+
+  const handleExport = async () => {
+    setBusy('export');
+    try {
+      const result = await exportHabits();
+      if (!result.success && result.error) {
+        Alert.alert('Export failed', result.error);
+      }
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handleImport = () => {
+    Alert.alert(
+      'Import backup?',
+      'This replaces all current habits with the ones in the file you pick. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Replace',
+          style: 'destructive',
+          onPress: async () => {
+            setBusy('import');
+            try {
+              const result = await importHabits();
+              if (result.cancelled) {
+                return;
+              }
+              if (!result.success) {
+                Alert.alert('Import failed', result.error);
+              } else {
+                Alert.alert('Import complete', `Imported ${result.count} habit(s).`);
+              }
+            } finally {
+              setBusy(null);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const renderDetail = () => {
     if (!selected) return null;
@@ -277,6 +321,28 @@ export default function StatsScreen() {
             </>
           )}
         </Pressable>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Backup & Restore</Text>
+        <View style={styles.backupRow}>
+          <Pressable
+            disabled={busy !== null}
+            onPress={handleExport}
+            style={[styles.backupButton, { backgroundColor: theme.card, borderColor: theme.border, opacity: busy ? 0.6 : 1 }]}
+          >
+            <Ionicons name="cloud-upload-outline" size={24} color={theme.tint} style={{ marginBottom: 8 }} />
+            <Text style={[styles.backupButtonLabel, { color: theme.text }]}>Export Backup</Text>
+          </Pressable>
+          <Pressable
+            disabled={busy !== null}
+            onPress={handleImport}
+            style={[styles.backupButton, { backgroundColor: theme.card, borderColor: theme.border, opacity: busy ? 0.6 : 1 }]}
+          >
+            <Ionicons name="cloud-download-outline" size={24} color={theme.tint} style={{ marginBottom: 8 }} />
+            <Text style={[styles.backupButtonLabel, { color: theme.text }]}>Import Backup</Text>
+          </Pressable>
+        </View>
       </View>
     </ScrollView>
   );
@@ -476,5 +542,20 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
     textTransform: 'uppercase',
-  }
+  },
+  backupRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  backupButton: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  backupButtonLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
 });
