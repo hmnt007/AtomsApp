@@ -354,12 +354,12 @@ function HabitCard({ habit, theme, onToggle, onDelete, onEdit }: { habit: Habit,
           style={styles.habitInfo}
         >
           <View style={styles.titleRow}>
-            <Text style={[styles.habitTitle, { color: theme.text }]} numberOfLines={1}>{habit.title}</Text>
+            <Text style={[styles.habitTitle, { color: theme.text }]}>{habit.title}</Text>
             <Ionicons
               name={expanded ? "chevron-up" : "chevron-down"}
               size={16}
               color={theme.icon}
-              style={{ marginLeft: 6 }}
+              style={{ marginLeft: 6, marginTop: 3 }}
             />
           </View>
           <Text style={[styles.habitIdentity, { color: theme.icon }]}>{habit.identity}</Text>
@@ -397,13 +397,6 @@ function HabitCard({ habit, theme, onToggle, onDelete, onEdit }: { habit: Habit,
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Ionicons name="share-outline" size={20} color={theme.icon} />
-          </Pressable>
-          <Pressable
-            onPress={onDelete}
-            style={[styles.actionButton, { marginLeft: 10 }]}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons name="trash-outline" size={20} color="#FF3B30" />
           </Pressable>
         </Pressable>
       </View>
@@ -574,7 +567,7 @@ const styles = StyleSheet.create({
   },
   titleRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 4,
   },
   expandedTileView: {
