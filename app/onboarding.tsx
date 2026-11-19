@@ -6,7 +6,8 @@ import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInRight } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { FadeInRight, runOnJS } from 'react-native-reanimated';
 
 import { ONBOARDING_KEY } from '@/utils/onboarding';
 
@@ -113,6 +114,16 @@ export default function OnboardingScreen() {
         setIndex(i => Math.max(0, i - 1));
     };
 
+    const swipeGesture = Gesture.Pan().onEnd((e) => {
+        if (e.translationX < -50) {
+            if (!isLast) {
+                runOnJS(next)();
+            }
+        } else if (e.translationX > 50) {
+            runOnJS(back)();
+        }
+    });
+
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             <View style={styles.topBar}>
@@ -126,23 +137,25 @@ export default function OnboardingScreen() {
                 )}
             </View>
 
-            <Animated.View key={index} entering={FadeInRight.duration(250)} style={styles.content}>
-                <View style={[styles.iconCircle, { backgroundColor: step.color + '20' }]}>
-                    <Ionicons name={step.icon} size={64} color={step.color} />
-                </View>
-                <Text style={[styles.title, { color: theme.text }]}>{step.title}</Text>
-                <Text style={[styles.body, { color: theme.icon }]}>{step.body}</Text>
-                {step.tips && (
-                    <View style={[styles.tipsCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                        {step.tips.map(tip => (
-                            <View key={tip} style={styles.tipRow}>
-                                <Ionicons name="checkmark" size={16} color={step.color} style={{ marginTop: 2 }} />
-                                <Text style={[styles.tipText, { color: theme.text }]}>{tip}</Text>
-                            </View>
-                        ))}
+            <GestureDetector gesture={swipeGesture}>
+                <Animated.View key={index} entering={FadeInRight.duration(250)} style={styles.content}>
+                    <View style={[styles.iconCircle, { backgroundColor: step.color + '20' }]}>
+                        <Ionicons name={step.icon} size={64} color={step.color} />
                     </View>
-                )}
-            </Animated.View>
+                    <Text style={[styles.title, { color: theme.text }]}>{step.title}</Text>
+                    <Text style={[styles.body, { color: theme.icon }]}>{step.body}</Text>
+                    {step.tips && (
+                        <View style={[styles.tipsCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                            {step.tips.map(tip => (
+                                <View key={tip} style={styles.tipRow}>
+                                    <Ionicons name="checkmark" size={16} color={step.color} style={{ marginTop: 2 }} />
+                                    <Text style={[styles.tipText, { color: theme.text }]}>{tip}</Text>
+                                </View>
+                            ))}
+                        </View>
+                    )}
+                </Animated.View>
+            </GestureDetector>
 
             <View style={styles.dots}>
                 {STEPS.map((s, i) => (
