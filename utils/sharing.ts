@@ -31,7 +31,7 @@ export async function checkAndTriggerAutoShare(habits: any[]) {
                 `Here is my habit progress for today (${today}):\n\n` +
                 `${habitReports}\n\n` +
                 `Thanks for keeping me accountable!\n` +
-                `Sent from Atoms App`;
+                `Sent from Habits`;
 
             const isAvailable = await MailComposer.isAvailableAsync();
             if (isAvailable) {

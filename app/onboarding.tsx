@@ -25,8 +25,8 @@ const STEPS: Step[] = [
     {
         icon: 'sparkles',
         color: '#FF9500',
-        title: 'Welcome to Atoms',
-        body: 'Small habits, big change. Atoms helps you build habits around who you want to become, not just what you want to do.',
+        title: 'Welcome to Habits',
+        body: 'Small habits, big change. Habits helps you build habits around who you want to become, not just what you want to do.',
     },
     {
         icon: 'add-circle',
@@ -76,7 +76,7 @@ const STEPS: Step[] = [
         icon: 'notifications',
         color: '#FF2D55',
         title: 'Daily reminder',
-        body: 'Atoms sends a gentle reminder at 8:00 PM so you never break the chain. Allow notifications when asked.',
+        body: 'Habits sends a gentle reminder at 8:00 PM so you never break the chain. Allow notifications when asked.',
     },
 ];
 

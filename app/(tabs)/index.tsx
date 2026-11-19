@@ -124,7 +124,7 @@ export default function HomeScreen() {
           `Attached is my habit progress calendar for today (${today}):\n\n` +
           `${habitReports}\n\n` +
           `Thanks for keeping me accountable!\n` +
-          `Sent from Atoms App`;
+          `Sent from Habits`;
 
         const isAvailable = await MailComposer.isAvailableAsync();
         if (isAvailable) {
@@ -303,7 +303,7 @@ function HabitCard({ habit, theme, onToggle, onDelete, onEdit }: { habit: Habit,
 
   const handleShare = async () => {
     try {
-      const message = `Hey${habit.partner ? ' ' + habit.partner : ''}! I'm tracking my habit "${habit.title}" on Atoms. My current streak is ${habit.streak} days! 🔥`;
+      const message = `Hey${habit.partner ? ' ' + habit.partner : ''}! I'm tracking my habit "${habit.title}" on Habits. My current streak is ${habit.streak} days! 🔥`;
       await Share.share({
         message,
         title: 'My Habit Progress',
