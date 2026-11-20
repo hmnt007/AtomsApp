@@ -44,3 +44,4 @@ app-example
 
 # local build artifacts
 /build-outputs
+.superpowers/

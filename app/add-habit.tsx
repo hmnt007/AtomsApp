@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/Colors';
+import { Layout } from '@/constants/layout';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -6,11 +7,13 @@ import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, DeviceEventEmitter, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { INITIAL_HABITS } from './(tabs)/index';
 
 export default function AddHabitScreen() {
     const colorScheme = useColorScheme() ?? 'light';
     const theme = Colors[colorScheme];
+    const insets = useSafeAreaInsets();
     const { id } = useLocalSearchParams();
     const targetId = Array.isArray(id) ? id[0] : (id as string | undefined);
     const isEditing = Boolean(targetId);
@@ -22,6 +25,8 @@ export default function AddHabitScreen() {
     const [partner, setPartner] = useState(''); // Accountability partner name
     const [partnerEmail, setPartnerEmail] = useState(''); // Accountability partner email
     const [autoShareEnabled, setAutoShareEnabled] = useState(false); // Automated sharing
+    const [reminderHour, setReminderHour] = useState(20); // Reminder time, 24h clock
+    const [reminderMinute, setReminderMinute] = useState(0);
 
     const COLORS = ['#FF9500', '#FF3B30', '#34C759', '#007AFF', '#5856D6', '#AF52DE', '#FF2D55'];
     const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -53,6 +58,8 @@ export default function AddHabitScreen() {
                 setPartner(habit.partner || '');
                 setPartnerEmail(habit.partnerEmail || '');
                 setAutoShareEnabled(habit.autoShareEnabled || false);
+                setReminderHour(habit.reminderHour ?? 20);
+                setReminderMinute(habit.reminderMinute ?? 0);
             }
         } catch (e) {
             console.error('Failed to load habit for edit', e);
@@ -78,7 +85,9 @@ export default function AddHabitScreen() {
                         color,
                         partner: partner.trim(),
                         partnerEmail: partnerEmail.trim(),
-                        autoShareEnabled
+                        autoShareEnabled,
+                        reminderHour,
+                        reminderMinute
                     } : h
                 );
             } else {
@@ -94,6 +103,8 @@ export default function AddHabitScreen() {
                     partner: partner.trim(),
                     partnerEmail: partnerEmail.trim(),
                     autoShareEnabled,
+                    reminderHour,
+                    reminderMinute,
                 };
                 habits.push(newHabit);
             }
@@ -149,7 +160,7 @@ export default function AddHabitScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={[styles.container, { backgroundColor: theme.background }]}
         >
-            <ScrollView contentContainerStyle={styles.scrollContent}>
+            <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }]}>
                 <View style={styles.header}>
                     <Pressable onPress={() => router.back()} style={styles.closeButton}>
                         <Ionicons name="close" size={28} color={theme.text} />
@@ -157,13 +168,7 @@ export default function AddHabitScreen() {
                     <Text style={[styles.headerTitle, { color: theme.text }]}>
                         {isEditing ? 'Edit Habit' : 'New Habit'}
                     </Text>
-                    {isEditing ? (
-                        <Pressable onPress={handleDelete} style={styles.deleteIconButton}>
-                            <Ionicons name="trash-outline" size={24} color="#FF3B30" />
-                        </Pressable>
-                    ) : (
-                        <View style={{ width: 40 }} />
-                    )}
+                    <View style={{ width: 40 }} />
                 </View>
 
                 <View style={styles.section}>
@@ -259,17 +264,29 @@ export default function AddHabitScreen() {
                                     onPress={() => toggleDay(index)}
                                     style={[
                                         styles.dayButton,
-                                        { backgroundColor: theme.card, borderColor: theme.border },
-                                        isSelected && { backgroundColor: theme.tint, borderColor: theme.tint }
+                                        { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 },
+                                        isSelected && { backgroundColor: theme.tint, borderColor: theme.tint, borderWidth: 2 }
                                     ]}
                                 >
                                     <Text style={[
                                         styles.dayButtonText,
-                                        { color: theme.text },
+                                        { color: theme.icon },
                                         isSelected && { color: colorScheme === 'dark' ? '#000' : '#fff' }
                                     ]}>
                                         {day}
                                     </Text>
+                                    {isSelected && (
+                                        <View style={[
+                                            styles.dayButtonCheckBadge,
+                                            { backgroundColor: theme.background, borderColor: theme.tint }
+                                        ]}>
+                                            <Ionicons
+                                                name="checkmark"
+                                                size={10}
+                                                color={theme.tint}
+                                            />
+                                        </View>
+                                    )}
                                 </Pressable>
                             );
                         })}
@@ -279,6 +296,52 @@ export default function AddHabitScreen() {
                             repeatDays.length === 0 ? 'No days selected' :
                                 `Repeats on ${repeatDays.length} days a week`}
                     </Text>
+                </View>
+
+                <View style={styles.section}>
+                    <Text style={[styles.label, { color: theme.icon }]}>REMINDER TIME</Text>
+                    <View style={[styles.row, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                        <Text style={[styles.rowText, { color: theme.text }]}>
+                            {(() => {
+                                const hour12 = reminderHour % 12 === 0 ? 12 : reminderHour % 12;
+                                const ampm = reminderHour < 12 ? 'AM' : 'PM';
+                                const minuteStr = reminderMinute.toString().padStart(2, '0');
+                                return `${hour12}:${minuteStr} ${ampm}`;
+                            })()}
+                        </Text>
+                        <View style={styles.reminderSteppers}>
+                            <View style={styles.stepperGroup}>
+                                <Pressable
+                                    style={[styles.chevronButton, { backgroundColor: theme.background, borderColor: theme.border }]}
+                                    onPress={() => setReminderHour(prev => ((prev - 1) % 24 + 24) % 24)}
+                                >
+                                    <Ionicons name="chevron-down" size={16} color={theme.text} />
+                                </Pressable>
+                                <Text style={[styles.stepperLabel, { color: theme.icon }]}>Hr</Text>
+                                <Pressable
+                                    style={[styles.chevronButton, { backgroundColor: theme.background, borderColor: theme.border }]}
+                                    onPress={() => setReminderHour(prev => ((prev + 1) % 24 + 24) % 24)}
+                                >
+                                    <Ionicons name="chevron-up" size={16} color={theme.text} />
+                                </Pressable>
+                            </View>
+                            <View style={styles.stepperGroup}>
+                                <Pressable
+                                    style={[styles.chevronButton, { backgroundColor: theme.background, borderColor: theme.border }]}
+                                    onPress={() => setReminderMinute(prev => ((prev - 15) % 60 + 60) % 60)}
+                                >
+                                    <Ionicons name="chevron-down" size={16} color={theme.text} />
+                                </Pressable>
+                                <Text style={[styles.stepperLabel, { color: theme.icon }]}>Min</Text>
+                                <Pressable
+                                    style={[styles.chevronButton, { backgroundColor: theme.background, borderColor: theme.border }]}
+                                    onPress={() => setReminderMinute(prev => ((prev + 15) % 60 + 60) % 60)}
+                                >
+                                    <Ionicons name="chevron-up" size={16} color={theme.text} />
+                                </Pressable>
+                            </View>
+                        </View>
+                    </View>
                 </View>
 
                 <Pressable
@@ -312,8 +375,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        padding: 24,
-        paddingTop: 60,
+        paddingHorizontal: Layout.screenPaddingH,
     },
     header: {
         flexDirection: 'row',
@@ -363,10 +425,22 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         alignItems: 'center',
         justifyContent: 'center',
+        position: 'relative',
     },
     dayButtonText: {
         fontSize: 14,
         fontWeight: '700',
+    },
+    dayButtonCheckBadge: {
+        position: 'absolute',
+        top: -4,
+        right: -4,
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     colorsRow: {
         paddingVertical: 10,
@@ -398,6 +472,28 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '600',
     },
+    reminderSteppers: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+    },
+    stepperGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    chevronButton: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    stepperLabel: {
+        fontSize: 11,
+        fontWeight: '700',
+    },
     saveButton: {
         height: 60,
         borderRadius: 30,
@@ -408,12 +504,6 @@ const styles = StyleSheet.create({
     saveButtonText: {
         fontSize: 18,
         fontWeight: '700',
-    },
-    deleteIconButton: {
-        width: 40,
-        height: 40,
-        alignItems: 'center',
-        justifyContent: 'center',
     },
     deleteButton: {
         height: 60,

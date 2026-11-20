@@ -1,6 +1,9 @@
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const LEGACY_REMINDER_MIGRATED_KEY = 'legacy_reminder_migrated';
 
 // Configure how notifications are handled when the app is open
 Notifications.setNotificationHandler({
@@ -43,14 +46,12 @@ export async function registerForPushNotificationsAsync() {
     return token;
 }
 
-export async function scheduleDailyReminder(hour: number = 20, minute: number = 0) {
-    // Clear any existing reminders first
-    await Notifications.cancelAllScheduledNotificationsAsync();
-
+export async function scheduleHabitReminder(habitId: string, title: string, hour: number, minute: number) {
     await Notifications.scheduleNotificationAsync({
+        identifier: `habit-reminder-${habitId}`,
         content: {
-            title: "Atom Check-in ⚛️",
-            body: "Small habits lead to big changes. Did you complete your habits today?",
+            title: "Habit reminder",
+            body: `Time to work on "${title}"`,
             sound: true,
         },
         trigger: {
@@ -60,4 +61,63 @@ export async function scheduleDailyReminder(hour: number = 20, minute: number = 
             type: Notifications.SchedulableTriggerInputTypes.DAILY,
         } as any, // Type casting due to some expo version type mismatches
     });
+}
+
+export async function cancelHabitReminder(habitId: string) {
+    await Notifications.cancelScheduledNotificationAsync(`habit-reminder-${habitId}`);
+}
+
+export async function scheduleMissTwiceWarning(habitId: string, habitTitle: string): Promise<void> {
+    await Notifications.scheduleNotificationAsync({
+        identifier: `miss-twice-${habitId}`,
+        content: {
+            title: "Don't break it twice ⚠️",
+            body: `You missed "${habitTitle}" yesterday — don't let it slip two days in a row.`,
+            sound: true,
+        },
+        trigger: {
+            seconds: 60 * 60 * 2,
+            type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        } as any, // Type casting due to some expo version type mismatches
+    });
+}
+
+export async function cancelMissTwiceWarning(habitId: string): Promise<void> {
+    await Notifications.cancelScheduledNotificationAsync(`miss-twice-${habitId}`);
+}
+
+export async function migrateLegacyReminder(): Promise<void> {
+    try {
+        const alreadyMigrated = await AsyncStorage.getItem(LEGACY_REMINDER_MIGRATED_KEY);
+        if (alreadyMigrated) return;
+
+        const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+        const legacyNotifications = scheduled.filter(
+            n => !n.identifier.startsWith('habit-reminder-') && !n.identifier.startsWith('miss-twice-')
+        );
+        await Promise.all(
+            legacyNotifications.map(n => Notifications.cancelScheduledNotificationAsync(n.identifier))
+        );
+
+        await AsyncStorage.setItem(LEGACY_REMINDER_MIGRATED_KEY, 'true');
+    } catch (e) {
+        console.error('Failed to migrate legacy reminder', e);
+    }
+}
+
+export async function syncHabitReminders(habits: { id: string; title: string; reminderHour?: number; reminderMinute?: number }[]) {
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    const existingHabitReminders = scheduled.filter(n => n.identifier.startsWith('habit-reminder-'));
+    await Promise.all(
+        existingHabitReminders.map(n => Notifications.cancelScheduledNotificationAsync(n.identifier))
+    );
+
+    for (const habit of habits) {
+        await scheduleHabitReminder(
+            habit.id,
+            habit.title,
+            habit.reminderHour ?? 20,
+            habit.reminderMinute ?? 0
+        );
+    }
 }

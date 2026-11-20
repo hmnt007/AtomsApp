@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/Colors';
+import { Layout } from '@/constants/layout';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { getLocalDateString } from '@/utils/date';
 import { calculateStreak } from '@/utils/streak';
@@ -8,6 +9,7 @@ import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, DeviceEventEmitter, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { INITIAL_HABITS } from './(tabs)/index';
 
 interface Habit {
@@ -27,6 +29,7 @@ interface Habit {
 export default function CalendarModal() {
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
+  const insets = useSafeAreaInsets();
   const { habitId } = useLocalSearchParams();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [selectedHabitId, setSelectedHabitId] = useState<string | null>(null);
@@ -118,6 +121,7 @@ export default function CalendarModal() {
   };
 
   const toggleDate = (dateStr: string) => {
+    if (dateStr > getLocalDateString()) return;
     if (!selectedHabitId || !selectedHabit) return;
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -182,16 +186,19 @@ export default function CalendarModal() {
           const dayIdx = (date.getDay() + 6) % 7;
           const isScheduled = selectedHabit?.repeatDays?.includes(dayIdx) ?? true;
           const habitColor = selectedHabit?.color || theme.success;
+          const isFuture = dateStr > getLocalDateString();
 
           return (
             <Pressable
               key={dateStr}
               onPress={() => toggleDate(dateStr)}
+              disabled={isFuture}
               style={[
                 styles.dayCell,
                 isTracked && { backgroundColor: habitColor + '40', borderColor: habitColor, borderWidth: 1 },
                 isToday && !isTracked && { borderColor: theme.tint, borderWidth: 1 },
-                !isScheduled && !isTracked && { opacity: 0.3 }
+                !isScheduled && !isTracked && { opacity: 0.3 },
+                isFuture && { opacity: 0.3 }
               ]}
             >
               <Text style={[
@@ -210,35 +217,16 @@ export default function CalendarModal() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top + 20 }]}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.closeBtn}>
           <Ionicons name="close" size={28} color={theme.text} />
         </Pressable>
         <Text style={[styles.title, { color: theme.text }]}>Activity Calendar</Text>
-        <View style={styles.headerActions}>
-          {selectedHabit && (
-            <>
-              <Pressable
-                onPress={handleEditHabit}
-                style={styles.headerIconBtn}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons name="pencil-outline" size={20} color={theme.text} />
-              </Pressable>
-              <Pressable
-                onPress={() => handleDeleteHabit(selectedHabit.id, selectedHabit.title)}
-                style={[styles.headerIconBtn, { marginLeft: 12 }]}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons name="trash-outline" size={20} color="#FF3B30" />
-              </Pressable>
-            </>
-          )}
-        </View>
+        <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 20 }]} showsVerticalScrollIndicator={false}>
         <View style={styles.habitSelector}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {habits.map(h => (
@@ -304,17 +292,24 @@ export default function CalendarModal() {
           <View style={styles.expandedActionRow}>
             <Pressable
               style={[styles.expandedEditBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
+              onPress={() => router.back()}
+            >
+              <Ionicons name="checkmark-circle-outline" size={18} color={theme.tint} style={{ marginRight: 6 }} />
+              <Text style={[styles.expandedEditBtnText, { color: theme.tint }]}>Done</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.expandedEditBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
               onPress={handleEditHabit}
             >
               <Ionicons name="pencil-outline" size={18} color={theme.text} style={{ marginRight: 6 }} />
-              <Text style={[styles.expandedEditBtnText, { color: theme.text }]}>Edit Habit</Text>
+              <Text style={[styles.expandedEditBtnText, { color: theme.text }]}>Edit</Text>
             </Pressable>
             <Pressable
               style={[styles.expandedDeleteBtn, { backgroundColor: '#FF3B3015', borderColor: '#FF3B3040' }]}
               onPress={() => handleDeleteHabit(selectedHabit.id, selectedHabit.title)}
             >
               <Ionicons name="trash-outline" size={18} color="#FF3B30" style={{ marginRight: 6 }} />
-              <Text style={styles.expandedDeleteBtnText}>Delete Habit</Text>
+              <Text style={styles.expandedDeleteBtnText}>Delete</Text>
             </Pressable>
           </View>
         )}
@@ -324,8 +319,8 @@ export default function CalendarModal() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, paddingTop: 20 },
+  container: { flex: 1, paddingHorizontal: Layout.screenPaddingH },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
   closeBtn: { padding: 5 },
   title: { fontSize: 20, fontWeight: '700' },
   habitSelector: { marginBottom: 20 },
@@ -348,10 +343,9 @@ const styles = StyleSheet.create({
   legendItem: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 15 },
   legendBox: { width: 16, height: 16, borderRadius: 4, marginRight: 8 },
   legendText: { fontSize: 12, fontWeight: '600' },
-  headerActions: { flexDirection: 'row', alignItems: 'center' },
-  headerIconBtn: { padding: 4 },
+  headerSpacer: { width: 38 },
   scrollContent: { paddingBottom: 40 },
-  expandedActionRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 28, gap: 12 },
+  expandedActionRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 28, gap: 10 },
   expandedEditBtn: { flex: 1, height: 50, borderRadius: 25, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   expandedEditBtnText: { fontSize: 16, fontWeight: '700' },
   expandedDeleteBtn: { flex: 1, height: 50, borderRadius: 25, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1 },

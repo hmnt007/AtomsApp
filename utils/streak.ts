@@ -52,3 +52,26 @@ export function calculateStreak(history: string[], repeatDays: number[]): number
 
     return currentStreak;
 }
+
+export function missedPreviousScheduledDay(history: string[], repeatDays: number[], today: Date = new Date()): boolean {
+    if (!repeatDays || repeatDays.length === 0) return false;
+    if (!history) history = [];
+    if (history.length === 0) return false;
+
+    const historySet = new Set(history);
+
+    if (historySet.has(getLocalDateString(today))) return false;
+
+    const checkDate = new Date(today);
+    checkDate.setDate(checkDate.getDate() - 1);
+
+    for (let i = 0; i < 14; i++) {
+        const dayIdx = (checkDate.getDay() + 6) % 7;
+        if (repeatDays.includes(dayIdx)) {
+            return !historySet.has(getLocalDateString(checkDate));
+        }
+        checkDate.setDate(checkDate.getDate() - 1);
+    }
+
+    return false;
+}

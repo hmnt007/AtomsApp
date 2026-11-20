@@ -1,10 +1,12 @@
 import { ONBOARDING_KEY } from '@/utils/onboarding';
 import { CalendarSnapshot } from '@/components/CalendarSnapshot';
 import { Colors } from '@/constants/Colors';
+import { Layout } from '@/constants/layout';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { getLocalDateString } from '@/utils/date';
-import { registerForPushNotificationsAsync, scheduleDailyReminder } from '@/utils/notifications';
-import { calculateStreak } from '@/utils/streak';
+import { cancelMissTwiceWarning, migrateLegacyReminder, registerForPushNotificationsAsync, scheduleMissTwiceWarning, syncHabitReminders } from '@/utils/notifications';
+import { calculateStreak, missedPreviousScheduledDay } from '@/utils/streak';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
@@ -17,6 +19,7 @@ import Animated, {
   useSharedValue,
   withTiming
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { captureRef } from 'react-native-view-shot';
 
 export interface Habit {
@@ -31,15 +34,19 @@ export interface Habit {
   partner?: string;
   partnerEmail?: string;
   autoShareEnabled?: boolean;
+  reminderHour?: number;
+  reminderMinute?: number;
 }
 
 export const INITIAL_HABITS: Habit[] = [
-  { id: '1', title: 'Read 10 Pages', identity: 'I am a learner', completed: false, streak: 0, history: [], repeatDays: [0, 1, 2, 3, 4, 5, 6], color: '#5856D6', partner: '', partnerEmail: '', autoShareEnabled: false },
+  { id: '1', title: 'Meditate', identity: 'I want to be a calm person', completed: false, streak: 0, history: [], repeatDays: [0, 1, 2, 3, 4, 5, 6], color: '#5856D6', partner: '', partnerEmail: '', autoShareEnabled: false },
 ];
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
+  const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [captureHabit, setCaptureHabit] = useState<Habit | null>(null);
   const snapshotRef = useRef<View>(null);
@@ -58,6 +65,23 @@ export default function HomeScreen() {
       }));
 
       setHabits(loadedHabits);
+
+      // Notification side-effects are isolated in their own try/catch so a
+      // failure here (e.g. unsupported notification APIs on web) can never
+      // abort auto-share or first-launch seeding below.
+      try {
+        await syncHabitReminders(loadedHabits);
+
+        for (const h of loadedHabits) {
+          if (missedPreviousScheduledDay(h.history, h.repeatDays, new Date())) {
+            await scheduleMissTwiceWarning(h.id, h.title);
+          } else {
+            await cancelMissTwiceWarning(h.id);
+          }
+        }
+      } catch (notificationError) {
+        console.error('Failed to sync habit notifications', notificationError);
+      }
 
       // Automated Sharing Logic with Snapshots
       const lastShareDate = await AsyncStorage.getItem('last_auto_share_date');
@@ -110,7 +134,7 @@ export default function HomeScreen() {
           `Attached is my habit progress calendar for today (${today}):\n\n` +
           `${habitReports}\n\n` +
           `Thanks for keeping me accountable!\n` +
-          `Sent from Atoms App`;
+          `Sent from Habits`;
 
         const isAvailable = await MailComposer.isAvailableAsync();
         if (isAvailable) {
@@ -154,8 +178,8 @@ export default function HomeScreen() {
 
   React.useEffect(() => {
     async function setupNotifications() {
+      await migrateLegacyReminder();
       await registerForPushNotificationsAsync();
-      await scheduleDailyReminder(20, 0); // 8:00 PM
     }
     setupNotifications();
 
@@ -242,7 +266,7 @@ export default function HomeScreen() {
   const visibleHabits = habits.filter(h => !h.repeatDays || h.repeatDays.includes(todayIdx));
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top + 20 }]}>
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <Text style={[styles.greeting, { color: theme.text }]}>Today</Text>
@@ -268,7 +292,14 @@ export default function HomeScreen() {
       />
 
       <Pressable
-        style={[styles.fab, { backgroundColor: theme.tint }]}
+        style={[
+          styles.fab,
+          {
+            backgroundColor: theme.tint,
+            bottom: Platform.OS === 'ios' ? tabBarHeight + 16 : 24,
+            right: 30,
+          },
+        ]}
         onPress={() => router.push('/add-habit')}
       >
         <Ionicons name="add" size={30} color={colorScheme === 'dark' ? '#000' : '#fff'} />
@@ -290,7 +321,7 @@ function HabitCard({ habit, theme, onToggle, onDelete, onEdit }: { habit: Habit,
 
   const handleShare = async () => {
     try {
-      const message = `Hey${habit.partner ? ' ' + habit.partner : ''}! I'm tracking my habit "${habit.title}" on Atoms. My current streak is ${habit.streak} days! 🔥`;
+      const message = `Hey${habit.partner ? ' ' + habit.partner : ''}! I'm tracking my habit "${habit.title}" on Habits. My current streak is ${habit.streak} days! 🔥`;
       await Share.share({
         message,
         title: 'My Habit Progress',
@@ -328,7 +359,7 @@ function HabitCard({ habit, theme, onToggle, onDelete, onEdit }: { habit: Habit,
               name={expanded ? "chevron-up" : "chevron-down"}
               size={16}
               color={theme.icon}
-              style={{ marginLeft: 6 }}
+              style={{ marginLeft: 6, marginTop: 3 }}
             />
           </View>
           <Text style={[styles.habitIdentity, { color: theme.icon }]}>{habit.identity}</Text>
@@ -366,13 +397,6 @@ function HabitCard({ habit, theme, onToggle, onDelete, onEdit }: { habit: Habit,
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Ionicons name="share-outline" size={20} color={theme.icon} />
-          </Pressable>
-          <Pressable
-            onPress={onDelete}
-            style={[styles.actionButton, { marginLeft: 10 }]}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons name="trash-outline" size={20} color="#FF3B30" />
           </Pressable>
         </Pressable>
       </View>
@@ -430,10 +454,9 @@ function HabitCard({ habit, theme, onToggle, onDelete, onEdit }: { habit: Habit,
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 60,
   },
   header: {
-    paddingHorizontal: 20,
+    paddingHorizontal: Layout.screenPaddingH,
     marginBottom: 30,
   },
   headerRow: {
@@ -452,7 +475,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   listContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: Layout.screenPaddingH,
     paddingBottom: 100,
   },
   habitCard: {
@@ -469,10 +492,12 @@ const styles = StyleSheet.create({
   },
   habitInfo: {
     flex: 1,
+    marginRight: 12,
   },
   habitTitle: {
     fontSize: 18,
     fontWeight: '700',
+    flexShrink: 1,
   },
   habitIdentity: {
     fontSize: 14,
@@ -523,8 +548,6 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 40,
-    right: 30,
     width: 60,
     height: 60,
     borderRadius: 30,
@@ -544,7 +567,7 @@ const styles = StyleSheet.create({
   },
   titleRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 4,
   },
   expandedTileView: {
